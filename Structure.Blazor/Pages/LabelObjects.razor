@@ -1,0 +1,340 @@
+﻿@page "/etichete"
+@using Structure.Domain.LabelObjects.Dto
+@*@using Structure.Blazor.Pages.Components*@
+@using Blazorise
+
+
+<h3>Etichete programari</h3>
+
+@* ************************* PAGE HEADER ************************* *@
+
+@* ************************* SEARCH ************************* *@
+<Card>
+    <CardHeader >
+        <Column ColumnSize="ColumnSize.Is3.OnMobile.Is6.OnWidescreen">
+            <Paragraph Alignment="TextAlignment.Right">
+                @*@if (CanCreateLabelObject)
+                {*@
+                    
+                @*}*@
+            </Paragraph>
+        </Column>
+    </CardHeader>
+
+    <CardBody>
+        <Form id="LabelObjectSearchForm" class="mb-3">
+            <Addons>
+                <Addon AddonType="AddonType.Start">
+                    <Button id="AddButton" Color="Color.Primary" Clicked="OpenCreateLabelObjectModal">
+                        <Icon Name="IconName.Add" Class="mr-1"></Icon>@L["Creaza eticheta"]
+                    </Button>
+                </Addon>
+                <Addon AddonType="AddonType.Body">
+                    <TextEdit @bind-Text="@Filter.FilterText"
+                              Autofocus="true"
+                              Placeholder="@L["Search"]">
+                    </TextEdit>
+                </Addon>
+                <Addon AddonType="AddonType.End">
+                    <Button Color="Color.Primary"
+                            Type="ButtonType.Submit"
+                            Block="true"
+                            form="LabelObjectSearchForm"
+                            PreventDefaultOnSubmit="true"
+                            Clicked="GetLabelObjectsAsync">
+                        <Icon Name="IconName.Search" Class="mr-1"></Icon>@L["Search"]
+                    </Button>
+                </Addon>
+
+            </Addons>
+        </Form>
+    </CardBody>
+</Card>
+@* ************************* DATA GRID ************************* *@
+<Card>
+    <CardBody>
+        <DataGrid TItem="LabelObjectDto"
+                  Data="@LabelList"
+                  ReadData="OnDatagridReadAsync"
+                  TotalItems="TotalCount"
+                  ShowPager="true"
+                  Responsive="true"
+                  PageSize="PageSize">
+            <DataGridColumns>
+                @*<Structure.Blazor.Pages.Components.DataGridEntityActionsColumn TItem="LabelObjectDto">
+                    <DisplayTemplate>
+                        <EntityActions TItem="=LabelObjectDto">
+                            <EntityAction TItem="LabelObjectDto" Clicked="()=>OpenEditLabelObjectModal(context)"
+                                          Text="@L["Edit"]"></EntityAction>
+                            <EntityAction TItem="LabelObjectDto" Clicked="()=>DeleteLabelObjectAsync(context)"
+                                          ConfirmationMessage="@(()=>L["DeleteConfirmationMessage"])"
+                                          Text="@L["Delete"]"></EntityAction>
+                        </EntityActions>
+                    </DisplayTemplate>
+                </Structure.Blazor.Pages.Components.DataGridEntityActionsColumn>*@
+
+
+
+                <DataGridCommandColumn TItem="LabelObjectDto">
+                        <EditCommandTemplate>
+                            <Button Color="Color.Primary" Clicked="@context.Clicked">Edit</Button>
+                        </EditCommandTemplate>
+
+                        <DeleteCommandTemplate>
+                            <Button Color="Color.Primary" Clicked="@context.Clicked">
+                                Delete
+                            </Button>
+                        </DeleteCommandTemplate>
+                    </DataGridCommandColumn>
+
+                <DataGridColumn TItem="LabelObjectDto"
+                                Field="LabelCaption"
+                                Caption="@L["Denumire eticheta"]">
+                </DataGridColumn>
+                <DataGridColumn TItem="LabelObjectDto"
+                                Field="TextCssClass"
+                                Caption="@CuloareText">
+                </DataGridColumn>
+                <DataGridColumn TItem="LabelObjectDto"
+                                Field="BackgroundCssClass"
+                                Caption="@CuloareBackground">
+                </DataGridColumn>
+
+
+            </DataGridColumns>
+
+
+        </DataGrid>
+    </CardBody>
+</Card>
+@* ************************* CREATE MODAL ************************* *@
+<Modal @ref="CreateLabelObjectModal">
+    <ModalContent IsCentered="true">
+        <Form id="CreateLabelObjectForm">
+            <ModalHeader>
+                <ModalTitle>@L["Eticheta noua"]</ModalTitle>
+                <CloseButton Clicked="CloseCreateLabelObjectModal" />
+            </ModalHeader>
+            <ModalBody>
+                <Validations @ref="@NewLabelObjectValidations"
+                             Mode="ValidationMode.Auto"
+                             Model="@NewLabelObject"
+                             ValidateOnLoad="false">
+
+                    @*<Validation>
+                           <Field>
+                               <FieldLabel>@L["LabelObjectId"]</FieldLabel>
+                               <NumericEdit TValue="int" @bind-Value="@NewLabelObject.LabelObjectId" >
+                                   <Feedback>
+                                       <ValidationError />
+                                   </Feedback>
+                                </NumericEdit>
+                           </Field>
+                        </Validation>*@
+
+                    <Validation>
+                        <Field>
+                            <FieldLabel>@L["LabelCaption"]</FieldLabel>
+                            <TextEdit @bind-Text="@NewLabelObject.LabelCaption">
+                                <Feedback>
+                                    <ValidationError />
+                                </Feedback>
+                            </TextEdit>
+                        </Field>
+                    </Validation>
+
+                    <Field>
+                        <FieldLabel>@L["TextCssClass"]</FieldLabel>
+                        <Select TValue="TextCssClass" @bind-SelectedValue="@NewLabelObject.TextCssClass">
+                            @foreach (var itemValue in Enum.GetValues(typeof(TextCssClass)))
+                            {
+                                <SelectItem TValue="TextCssClass" Value="@((TextCssClass) itemValue)">
+                                    @if ((TextCssClass)itemValue == TextCssClass.label_text1)
+                                    {
+                                        @L["Text negru"]
+                                    }
+                                    else
+                                    {
+                                        @L["Text rosu inchis"]
+                                    }
+                                </SelectItem>
+                            }
+                        </Select>
+                    </Field>
+
+                    <Field>
+                        <FieldLabel>@L["BackgroundCssClass"]</FieldLabel>
+                        <Select TValue="BackgroundCssClass" @bind-SelectedValue="@NewLabelObject.BackgroundCssClass">
+                            @foreach (var itemValue in Enum.GetValues(typeof(BackgroundCssClass)))
+                            {
+                                <SelectItem TValue="BackgroundCssClass" Value="@((BackgroundCssClass) itemValue)">
+                                    @switch ((BackgroundCssClass)itemValue)
+                                    {
+                                        case BackgroundCssClass.label1_background:
+                                            @L["Albastru deschis"]
+                                            break;
+                                        case BackgroundCssClass.label2_background:
+                                            @L["Roz deschis"]
+                                            break;
+                                        case BackgroundCssClass.label3_background:
+                                            @L["Rosu"]
+                                            break;
+                                        case BackgroundCssClass.label4_background:
+                                            @L["Verde galbui"]
+                                            break;
+                                        case BackgroundCssClass.label5_background:
+                                            @L["Maro"]
+                                            break;
+                                        case BackgroundCssClass.label6_background:
+                                            @L["Visiniu"]
+                                            break;
+                                        case BackgroundCssClass.label7_background:
+                                            @L["Gri deschis"]
+                                            break;
+                                        case BackgroundCssClass.label8_background:
+                                            @L["Auriu"]
+                                            break;
+                                        case BackgroundCssClass.label9_background:
+                                            @L["Violet deschis"]
+                                            break;
+                                        case BackgroundCssClass.label10_background:
+                                            @L["Caramiziu"]
+                                            break;
+                                    }
+                                </SelectItem>
+                            }
+                        </Select>
+                    </Field>
+
+                </Validations>
+            </ModalBody>
+            <ModalFooter>
+                <Button Color="Color.Secondary"
+                        Clicked="CloseCreateLabelObjectModal">
+                    @L["Cancel"]
+                </Button>
+                <Button Type="ButtonType.Submit" PreventDefaultOnSubmit="true" Color="Color.Primary"
+                        Clicked="CreateLabelObjectAsync">
+                    @L["Save"]
+                </Button>
+            </ModalFooter>
+        </Form>
+    </ModalContent>
+</Modal>
+
+@* ************************* EDIT MODAL ************************* *@
+<Modal @ref="EditLabelObjectModal">
+    <ModalContent IsCentered="true">
+        <Form id="EditLabelObjectForm">
+            <ModalHeader>
+                <ModalTitle>@L["Editare"]</ModalTitle>
+                <CloseButton Clicked="CloseEditLabelObjectModal" />
+            </ModalHeader>
+            <ModalBody>
+                <Validations @ref="@EditingLabelObjectValidations"
+                             Mode="ValidationMode.Auto"
+                             Model="@EditingLabelObject"
+                             ValidateOnLoad="false">
+
+                    @*<Validation>
+                           <Field>
+                               <FieldLabel>@L["LabelObjectId"]</FieldLabel>
+                               <NumericEdit TValue="int" @bind-Value="@EditingLabelObject.LabelObjectId" >
+                                   <Feedback>
+                                       <ValidationError />
+                                   </Feedback>
+                                </NumericEdit>
+                           </Field>
+                        </Validation>*@
+
+                    <Validation>
+                        <Field>
+                            <FieldLabel>@L["LabelCaption"]</FieldLabel>
+                            <TextEdit @bind-Text="@EditingLabelObject.LabelCaption">
+                                <Feedback>
+                                    <ValidationError />
+                                </Feedback>
+                            </TextEdit>
+                        </Field>
+                    </Validation>
+
+                    <Field>
+                        <FieldLabel>@L["TextCssClass"]</FieldLabel>
+                        <Select TValue="TextCssClass" @bind-SelectedValue="@EditingLabelObject.TextCssClass">
+                            @foreach (var itemValue in Enum.GetValues(typeof(TextCssClass)))
+                            {
+                                <SelectItem TValue="TextCssClass" Value="@((TextCssClass) itemValue)">
+                                    @if ((TextCssClass)itemValue == TextCssClass.label_text1)
+                                    {
+                                        @L["Text negru"]
+                                    }
+                                    else
+                                    {
+                                        @L["Text rosu inchis"]
+                                    }
+                                </SelectItem>
+                            }
+                        </Select>
+                    </Field>
+
+                    <Field>
+                        <FieldLabel>@L["BackgroundCssClass"]</FieldLabel>
+                        <Select TValue="BackgroundCssClass" @bind-SelectedValue="@EditingLabelObject.BackgroundCssClass">
+                            @foreach (var itemValue in Enum.GetValues(typeof(BackgroundCssClass)))
+                            {
+                                <SelectItem TValue="BackgroundCssClass" Value="@((BackgroundCssClass) itemValue)">
+                                    @switch ((BackgroundCssClass)itemValue)
+                                    {
+                                        case BackgroundCssClass.label1_background:
+                                            @L["Albastru deschis"]
+                                            break;
+                                        case BackgroundCssClass.label2_background:
+                                            @L["Roz deschis"]
+                                            break;
+                                        case BackgroundCssClass.label3_background:
+                                            @L["Rosu"]
+                                            break;
+                                        case BackgroundCssClass.label4_background:
+                                            @L["Verde galbui"]
+                                            break;
+                                        case BackgroundCssClass.label5_background:
+                                            @L["Maro"]
+                                            break;
+                                        case BackgroundCssClass.label6_background:
+                                            @L["Visiniu"]
+                                            break;
+                                        case BackgroundCssClass.label7_background:
+                                            @L["Gri deschis"]
+                                            break;
+                                        case BackgroundCssClass.label8_background:
+                                            @L["Auriu"]
+                                            break;
+                                        case BackgroundCssClass.label9_background:
+                                            @L["Violet deschis"]
+                                            break;
+                                        case BackgroundCssClass.label10_background:
+                                            @L["Caramiziu"]
+                                            break;
+                                    }
+                                </SelectItem>
+                            }
+                        </Select>
+                    </Field>
+
+                </Validations>
+            </ModalBody>
+            <ModalFooter>
+                <Button Color="Color.Secondary"
+                        Clicked="CloseEditLabelObjectModal">
+                    @L["Cancel"]
+                </Button>
+                <Button Type="ButtonType.Submit" PreventDefaultOnSubmit="true" Color="Color.Primary"
+                        Clicked="UpdateLabelObjectAsync">
+                    @L["Save"]
+                </Button>
+            </ModalFooter>
+        </Form>
+    </ModalContent>
+</Modal>
+
+
